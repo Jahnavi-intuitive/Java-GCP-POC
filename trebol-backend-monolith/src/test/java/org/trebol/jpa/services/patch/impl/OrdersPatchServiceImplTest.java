@@ -109,12 +109,13 @@ class OrdersPatchServiceImplTest {
 
     @Test
     void patches_date() throws BadInputException {
-        Instant whenTheMethodExecutes = Instant.now(Clock.systemUTC());
+        Instant originalDate = existingOrder.getDate();
+        Instant whenTheMethodExecutes = Instant.now(Clock.systemUTC()).plusSeconds(60);
         Map<String, Object> input = this.mapFrom(OrderPojo.builder()
             .date(whenTheMethodExecutes)
             .build());
         Order result = instance.patchExistingEntity(input, existingOrder);
-        assertNotEquals(existingOrder, result);
+        assertNotEquals(originalDate, result.getDate());
         assertEquals(whenTheMethodExecutes, result.getDate());
     }
 
