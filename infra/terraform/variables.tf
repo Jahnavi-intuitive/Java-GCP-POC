@@ -12,3 +12,18 @@ variable "db_tier" {
   type    = string
   default = "db-f1-micro"
 }
+
+variable "image" {
+  type        = string
+  description = "Full image path for the first deploy"
+}
+
+variable "max_instances" {
+  type    = number
+  default = 10
+}
+
+variable "cors_allowed_origins" {
+  type    = string
+  default = "http://localhost:3000"
+}
