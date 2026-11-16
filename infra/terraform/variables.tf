@@ -7,3 +7,8 @@ variable "region" {
   type    = string
   default = "us-central1"
 }
+
+variable "db_tier" {
+  type    = string
+  default = "db-f1-micro"
+}
