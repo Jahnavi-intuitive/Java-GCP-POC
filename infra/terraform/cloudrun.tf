@@ -117,6 +117,7 @@ resource "google_cloud_run_v2_service" "app" {
     ignore_changes = [
       client,
       client_version,
+      scaling,
       traffic,
       template[0].revision,
       template[0].labels,

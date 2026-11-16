@@ -27,3 +27,8 @@ variable "cors_allowed_origins" {
   type    = string
   default = "http://localhost:3000"
 }
+
+variable "allow_public_access" {
+  type    = bool
+  default = false
+}
