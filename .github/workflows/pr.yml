@@ -33,11 +33,7 @@ jobs:
           cache-dependency-path: trebol-backend-monolith/pom.xml
 
       - name: Build and run tests with coverage
-        run: >
-          mvn -B
-          org.jacoco:jacoco-maven-plugin:0.8.12:prepare-agent
-          verify
-          org.jacoco:jacoco-maven-plugin:0.8.12:report
+        run: mvn -B verify
 
       - name: Coverage summary
         if: always()
