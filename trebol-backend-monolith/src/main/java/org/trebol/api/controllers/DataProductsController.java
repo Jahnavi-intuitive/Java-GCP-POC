@@ -24,6 +24,8 @@ import com.querydsl.core.types.OrderSpecifier;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -72,6 +74,7 @@ public class DataProductsController
 
     @Override
     @GetMapping
+    @Cacheable(cacheNames = "catalogue", key = "#root.targetClass.simpleName + ':' + #allRequestParams")
     @Operation(summary = "List products.")
     public DataPagePojo<ProductPojo> readMany(@RequestParam Map<String, String> allRequestParams) {
         return super.readMany(allRequestParams);
@@ -79,6 +82,7 @@ public class DataProductsController
 
     @Override
     @PostMapping
+    @CacheEvict(cacheNames = "catalogue", allEntries = true)
     @Operation(summary = "Define new products.")
     @ResponseStatus(CREATED)
     @PreAuthorize("hasAuthority('products:create')")
@@ -89,6 +93,7 @@ public class DataProductsController
 
     @Override
     @PutMapping
+    @CacheEvict(cacheNames = "catalogue", allEntries = true)
     @Operation(summary = "Replace products data.")
     @ResponseStatus(NO_CONTENT)
     @PreAuthorize("hasAuthority('products:update')")
@@ -99,6 +104,7 @@ public class DataProductsController
 
     @Override
     @PatchMapping
+    @CacheEvict(cacheNames = "catalogue", allEntries = true)
     @Operation(summary = "Update parts of products data.")
     @ResponseStatus(NO_CONTENT)
     @PreAuthorize("hasAuthority('products:update')")
@@ -111,6 +117,7 @@ public class DataProductsController
 
     @Override
     @DeleteMapping
+    @CacheEvict(cacheNames = "catalogue", allEntries = true)
     @Operation(summary = "Remove products.")
     @ResponseStatus(NO_CONTENT)
     @PreAuthorize("hasAuthority('products:delete')")
