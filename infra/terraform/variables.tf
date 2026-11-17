@@ -10,7 +10,7 @@ variable "region" {
 
 variable "db_tier" {
   type    = string
-  default = "db-f1-micro"
+  default = "db-custom-2-7680"
 }
 
 variable "image" {
@@ -20,7 +20,7 @@ variable "image" {
 
 variable "max_instances" {
   type    = number
-  default = 10
+  default = 30
 }
 
 variable "cors_allowed_origins" {
