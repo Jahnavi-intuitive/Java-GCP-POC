@@ -37,3 +37,9 @@ variable "github_repository" {
   type    = string
   default = "Jahnavi-intuitive/Java-GCP-POC"
 }
+
+variable "alert_email" {
+  description = "Where alert emails are sent"
+  type        = string
+  default     = "jahnavi.patel@intuitive.ai"
+}
