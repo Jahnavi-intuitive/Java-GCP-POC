@@ -24,6 +24,8 @@ import com.querydsl.core.types.OrderSpecifier;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -72,6 +74,7 @@ public class DataProductCategoriesController
 
     @Override
     @GetMapping
+    @Cacheable(cacheNames = "catalogue", key = "#root.targetClass.simpleName + ':' + #allRequestParams")
     @Operation(summary = "List product categories.")
     public DataPagePojo<ProductCategoryPojo> readMany(@RequestParam Map<String, String> allRequestParams) {
         if (allRequestParams==null || allRequestParams.isEmpty()) {
@@ -82,6 +85,7 @@ public class DataProductCategoriesController
 
     @Override
     @PostMapping
+    @CacheEvict(cacheNames = "catalogue", allEntries = true)
     @Operation(summary = "Define new product categories.")
     @ResponseStatus(CREATED)
     @PreAuthorize("hasAuthority('product_categories:create')")
@@ -92,6 +96,7 @@ public class DataProductCategoriesController
 
     @Override
     @PutMapping
+    @CacheEvict(cacheNames = "catalogue", allEntries = true)
     @Operation(summary = "Replace product categories data.")
     @ResponseStatus(NO_CONTENT)
     @PreAuthorize("hasAuthority('product_categories:update')")
@@ -102,6 +107,7 @@ public class DataProductCategoriesController
 
     @Override
     @PatchMapping
+    @CacheEvict(cacheNames = "catalogue", allEntries = true)
     @Operation(summary = "Update parts of product categories data.")
     @ResponseStatus(NO_CONTENT)
     @PreAuthorize("hasAuthority('product_categories:update')")
@@ -114,6 +120,7 @@ public class DataProductCategoriesController
 
     @Override
     @DeleteMapping
+    @CacheEvict(cacheNames = "catalogue", allEntries = true)
     @Operation(summary = "Remove product categories.")
     @ResponseStatus(NO_CONTENT)
     @PreAuthorize("hasAuthority('product_categories:delete')")

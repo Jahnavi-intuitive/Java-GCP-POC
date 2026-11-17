@@ -1,2 +1,3 @@
 *.log
-target/scripts/loadtest-baseline.json
+target/
+scripts/loadtest-baseline.json

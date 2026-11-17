@@ -23,6 +23,7 @@ package org.trebol.api.controllers;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -42,6 +43,7 @@ public class PublicAboutController {
     }
 
     @GetMapping
+    @Cacheable(cacheNames = "catalogue", key = "'about'")
     @Operation(summary = "View information useful to customers regarding the business.")
     public CompanyDetailsPojo readCompanyDetails() {
         return companyService.readDetails();
