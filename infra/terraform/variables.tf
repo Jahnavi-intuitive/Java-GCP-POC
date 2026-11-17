@@ -32,3 +32,8 @@ variable "allow_public_access" {
   type    = bool
   default = false
 }
+
+variable "github_repository" {
+  type    = string
+  default = "Jahnavi-intuitive/Java-GCP-POC"
+}
