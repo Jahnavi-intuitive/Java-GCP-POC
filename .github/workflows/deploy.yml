@@ -1,0 +1,121 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ["docs/**", "**.md"]
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+env:
+  SERVICE: trebol-poc-app
+  REGION: ${{ vars.GCP_REGION }}
+  IMAGE: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/trebol-poc/trebol-app
+
+jobs:
+  image:
+    name: Build and push image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_PUSH_SA }}
+      - uses: google-github-actions/setup-gcloud@v3
+      - run: gcloud auth configure-docker ${{ vars.GCP_REGION }}-docker.pkg.dev --quiet
+      - name: Build and push
+        working-directory: trebol-backend-monolith
+        run: |
+          docker buildx build --platform linux/amd64 --provenance=false --sbom=false \
+            -t "$IMAGE:${{ github.sha }}" --push .
+
+  deploy:
+    name: Canary deploy, bake, promote or roll back
+    needs: image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      SERVICE_URL: ${{ vars.GCP_SERVICE_URL }}
+    steps:
+      - uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SA }}
+          token_format: id_token
+          id_token_audience: ${{ vars.GCP_SERVICE_URL }}
+          id_token_include_email: true
+        id: auth
+      - uses: google-github-actions/setup-gcloud@v3
+
+      - name: Deploy canary revision (0% traffic)
+        run: |
+          PREV=$(gcloud run services describe "$SERVICE" --region "$REGION" \
+                   --format='value(status.latestReadyRevisionName)')
+          NEW="$SERVICE-g${GITHUB_SHA::7}-$GITHUB_RUN_NUMBER"
+          echo "PREV=$PREV" >> "$GITHUB_ENV"
+          echo "NEW=$NEW" >> "$GITHUB_ENV"
+          gcloud run deploy "$SERVICE" --region "$REGION" \
+            --image "$IMAGE:${{ github.sha }}" \
+            --revision-suffix "g${GITHUB_SHA::7}-$GITHUB_RUN_NUMBER" \
+            --no-traffic --tag canary --quiet
+
+      - name: Smoke test canary URL
+        run: |
+          CANARY="https://canary---${SERVICE_URL#https://}"
+          echo "CANARY=$CANARY" >> "$GITHUB_ENV"
+          for path in /actuator/health/liveness /actuator/health/readiness; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 \
+              -H "X-Serverless-Authorization: Bearer ${{ steps.auth.outputs.id_token }}" "$CANARY$path")
+            echo "$path -> $code"
+            [ "$code" = "200" ]
+          done
+
+      - name: Send 10% of traffic to canary
+        run: |
+          gcloud run services update-traffic "$SERVICE" --region "$REGION" \
+            --to-revisions "$NEW=10,$PREV=90"
+
+      - name: Bake check (60 requests to canary)
+        run: |
+          fail=0
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 \
+              -H "X-Serverless-Authorization: Bearer ${{ steps.auth.outputs.id_token }}" \
+              "$CANARY/actuator/health/readiness")
+            [ "$code" = "200" ] || fail=$((fail+1))
+            sleep 1
+          done
+          echo "failed requests: $fail / 60"
+          echo "BAKE_FAILS=$fail" >> "$GITHUB_ENV"
+          [ "$fail" -le 1 ]
+
+      - name: Promote canary to 100%
+        run: |
+          gcloud run services update-traffic "$SERVICE" --region "$REGION" --to-latest
+          gcloud run services update-traffic "$SERVICE" --region "$REGION" --remove-tags canary
+
+      - name: Roll back automatically
+        if: failure() && env.PREV != ''
+        run: |
+          gcloud run services update-traffic "$SERVICE" --region "$REGION" --to-revisions "$PREV=100"
+          gcloud run services update-traffic "$SERVICE" --region "$REGION" --remove-tags canary || true
+          echo "### Deploy ROLLED BACK to $PREV" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publish status
+        if: success()
+        run: |
+          {
+            echo "### Deploy succeeded"
+            echo "- Revision: \`$NEW\` (now 100% of traffic)"
+            echo "- Previous revision: \`$PREV\`"
+            echo "- Bake check failures: ${BAKE_FAILS:-0} / 60"
+            echo "- Commit: \`${GITHUB_SHA::7}\`"
+          } >> "$GITHUB_STEP_SUMMARY"

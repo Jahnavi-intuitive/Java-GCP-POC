@@ -35,11 +35,25 @@ resource "google_service_account_iam_member" "deploy_from_main" {
   member             = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github.name}/attribute.ref/refs/heads/main"
 }
 
+resource "google_service_account_iam_member" "deploy_token_creator" {
+  service_account_id = google_service_account.ci_deploy.name
+  role               = "roles/iam.serviceAccountTokenCreator"
+  member             = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github.name}/attribute.ref/refs/heads/main"
+}
+
 resource "google_cloud_run_v2_service_iam_member" "deploy_developer" {
   project  = google_cloud_run_v2_service.app.project
   location = google_cloud_run_v2_service.app.location
   name     = google_cloud_run_v2_service.app.name
   role     = "roles/run.developer"
+  member   = "serviceAccount:${google_service_account.ci_deploy.email}"
+}
+
+resource "google_cloud_run_v2_service_iam_member" "deploy_invoker" {
+  project  = google_cloud_run_v2_service.app.project
+  location = google_cloud_run_v2_service.app.location
+  name     = google_cloud_run_v2_service.app.name
+  role     = "roles/run.invoker"
   member   = "serviceAccount:${google_service_account.ci_deploy.email}"
 }
 
