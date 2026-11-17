@@ -55,6 +55,10 @@ resource "google_cloud_run_v2_service" "app" {
         value = var.cors_allowed_origins
       }
       env {
+        name  = "SWAGGER_ENABLED"
+        value = tostring(var.swagger_enabled)
+      }
+      env {
         name = "DB_PASSWORD"
         value_source {
           secret_key_ref {

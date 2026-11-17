@@ -14,9 +14,8 @@ RUN --mount=type=cache,target=/root/.m2 mvn -B -q package -DskipTests \
  && java -Djarmode=layertools -jar target/*.war extract --destination /workspace/layers \
  # CDS can only archive classes from jars, so package the app classes as a jar.
  && jar cf /workspace/app-classes.jar -C /workspace/layers/application/WEB-INF/classes . \
- # lombok is compile-time only and swagger-ui is disabled in prod: not needed at runtime.
- && rm -f /workspace/layers/dependencies/WEB-INF/lib/lombok-*.jar \
-          /workspace/layers/dependencies/WEB-INF/lib/swagger-ui-*.jar
+ # lombok is compile-time only: not needed at runtime. swagger-ui is kept so Swagger UI can be enabled in prod (SWAGGER_ENABLED=true).
+ && rm -f /workspace/layers/dependencies/WEB-INF/lib/lombok-*.jar
 
 ############ stage 2: runtime ############
 FROM gcr.io/distroless/java17-debian12:nonroot AS runtime

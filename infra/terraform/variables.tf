@@ -43,3 +43,9 @@ variable "alert_email" {
   type        = string
   default     = "jahnavi.patel@intuitive.ai"
 }
+
+variable "swagger_enabled" {
+  description = "Enable Swagger UI and /v3/api-docs in prod (the service stays IAM-protected)"
+  type        = bool
+  default     = true
+}
