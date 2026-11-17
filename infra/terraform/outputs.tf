@@ -1,0 +1,36 @@
+output "registry_url" {
+  value       = "${var.region}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.app.repository_id}"
+  description = "Docker image path prefix"
+}
+
+output "vpc_name" {
+  value = google_compute_network.vpc.name
+}
+
+output "db_instance_name" {
+  value = google_sql_database_instance.main.name
+}
+
+output "db_private_ip" {
+  value = google_sql_database_instance.main.private_ip_address
+}
+
+output "runtime_sa_email" {
+  value = google_service_account.runtime.email
+}
+
+output "service_url" {
+  value = google_cloud_run_v2_service.app.uri
+}
+
+output "wif_provider" {
+  value = google_iam_workload_identity_pool_provider.github.name
+}
+
+output "ci_push_sa_email" {
+  value = google_service_account.ci_push.email
+}
+
+output "ci_deploy_sa_email" {
+  value = google_service_account.ci_deploy.email
+}
